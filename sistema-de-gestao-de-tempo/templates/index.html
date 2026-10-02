@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Produtividade</title>
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+            font-family: system-ui, -apple-system, sans-serif;
+            min-height: 100vh;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 900;
+            margin-bottom: 40px;
+            background: linear-gradient(to right, #34d399, #22d3ee);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 32px;
+            width: 100%;
+            max-width: 1000px;
+        }
+        @media (min-width: 768px) {
+            .grid-container { grid-template-columns: 1fr 1fr; }
+        }
+        .card {
+            background-color: rgba(30, 41, 59, 0.5);
+            backdrop-filter: blur(12px);
+            padding: 32px;
+            border-radius: 24px;
+            border: 1px solid rgba(71, 85, 105, 0.5);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            box-sizing: border-box;
+        }
+        .text-center { text-align: center; }
+        h2 { font-size: 1.25rem; font-weight: 700; color: #cbd5e1; margin-top: 0; margin-bottom: 24px; }
+        .tabs { display: flex; justify-content: center; gap: 8px; background: rgba(15, 23, 42, 0.6); padding: 6px; border-radius: 9999px; margin-bottom: 32px; border: 1px solid rgba(71, 85, 105, 0.3); }
+        .tab-btn { padding: 8px 16px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; border: none; cursor: pointer; background: transparent; color: #94a3b8; transition: all 0.2s; }
+        .tab-btn.active { background: #ef4444; color: white; box-shadow: 0 10px 15px -3px rgba(239, 68, 68, 0.3); }
+        .timer { font-size: 4.5rem; font-weight: 800; font-family: monospace; color: white; margin-bottom: 32px; }
+        .btn-start { width: 144px; padding: 14px 0; background: white; color: #020617; font-weight: 700; border-radius: 12px; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.875rem; transition: transform 0.2s; }
+        .btn-start:hover { transform: scale(1.05); }
+        .btn-reset { padding: 14px; background: rgba(71, 85, 105, 0.6); color: #cbd5e1; border-radius: 12px; border: none; cursor: pointer; font-size: 0.875rem; transition: all 0.2s; }
+        .btn-reset:hover { background: #475569; color: white; }
+        .logs { font-size: 0.75rem; color: #94a3b8; font-family: monospace; background: rgba(15, 23, 42, 0.4); padding: 12px; border-radius: 12px; border: 1px solid rgba(71, 85, 105, 0.3); text-align: left; height: 96px; overflow-y: auto; margin-top: 24px; }
+        .input-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 24px; }
+        label { font-size: 0.625rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #94a3b8; margin-bottom: 6px; display: block; }
+        input { display: block; width: 100%; background: rgba(15, 23, 42, 0.8); border: 1px solid #475569; border-radius: 12px; padding: 10px; color: white; box-sizing: border-box; }
+        input:focus { outline: none; border-color: #10b981; }
+        .btn-analisar { width: 100%; padding: 12px 0; background: linear-gradient(to right, #10b981, #06b6d4); color: #020617; font-weight: 700; border-radius: 12px; border: none; cursor: pointer; text-transform: uppercase; letter-spacing: 0.05em; font-size: 0.75rem; }
+        .hidden { display: none; }
+        .results { border-top: 1px solid rgba(71, 85, 105, 0.4); margin-top: 16px; padding-top: 16px; }
+        .alert-box { padding: 12px; background: rgba(15, 23, 42, 0.4); border-radius: 12px; border: 1px solid rgba(71, 85, 105, 0.4); font-size: 0.75rem; color: #cbd5e1; margin-bottom: 8px; }
+        .focus-box { background: rgba(15, 23, 42, 0.5); padding: 16px; border-radius: 12px; border: 1px solid rgba(71, 85, 105, 0.3); display: flex; justify-content: space-between; align-items: center; }
+        .focus-box span:first-child { color: #94a3b8; font-size: 0.75rem; font-weight: 500; }
+        .focus-box span:last-child { font-size: 1.25rem; font-weight: 900; color: #34d399; font-family: monospace; }
+    </style>
+</head>
+<body>
+
+    <h1>Foco & Gestão de Tempo</h1>
+
+    <div class="grid-container">
+        
+        <!-- CRONÔMETRO -->
+        <div class="card text-center">
+            <h2>⏱️ Cronômetro de Estudos</h2>
+            <div class="tabs">
+                <button onclick="setMode('pomodoro')" id="btn-pomodoro" class="tab-btn active">Foco Total</button>
+                <button onclick="setMode('short')" id="btn-short" class="tab-btn">Pausa Curta</button>
+            </div>
+            <div class="timer" id="timer-display">25:00</div>
+            <div style="display: flex; justify-content: center; gap: 16px;">
+                <button onclick="toggleTimer()" id="btn-start" class="btn-start">Iniciar</button>
+                <button onclick="resetTimer()" class="btn-reset">Interromper</button>
+            </div>
+            <div id="log-relogio" class="logs">
+                <p>> Pronto para iniciar o ciclo...</p>
+            </div>
+        </div>
+
+        <!-- ANALISADOR -->
+        <div class="card">
+            <h2>📊 Analisador de Rendimento</h2>
+            <div class="input-group">
+                <div>
+                    <label>Estudo (h)</label>
+                    <input type="number" id="horas-estudo" value="0">
+                </div>
+                <div>
+                    <label>Treino (h)</label>
+                    <input type="number" id="horas-treino" value="0">
+                </div>
+                <div>
+                    <label>Sono (h)</label>
+                    <input type="number" id="horas-sono" value="0">
+                </div>
+            </div>
+            <button onclick="enviarDadosAnalisador()" class="btn-analisar">Analisar Rotina</button>
+
+            <div id="painel-resultado" class="results hidden">
+                <div id="caixa-alertas"></div>
+                <div class="focus-box">
+                    <span>Tempo Focado:</span>
+                    <span id="txt-porcentagem">0%</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        let timer;
+        let isRunning = false;
+        let timeLeft = 25 * 60;
+        let currentMode = 'pomodoro';
+
+        const display = document.getElementById('timer-display');
+        const startBtn = document.getElementById('btn-start');
+        const logRelogio = document.getElementById('log-relogio');
+
+        const modes = {
+            pomodoro: { time: 25 * 60, color: '#ef4444', nome: 'Foco Total' },
+            short: { time: 5 * 60, color: '#14b8a6', nome: 'Pausa Curta' }
+        };
+
+        function adicionarLog(texto) {
+            const p = document.createElement('p');
+            p.textContent = `> ${texto}`;
+            p.style.margin = "4px 0";
+            logRelogio.appendChild(p);
+            logRelogio.scrollTop = logRelogio.scrollHeight;
+        }
+
+        function updateDisplay() {
+            let minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            display.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+        }
+
+        function setMode(mode) {
+            clearInterval(timer);
+            isRunning = false;
+            currentMode = mode;
+            timeLeft = modes[mode].time;
+            startBtn.textContent = 'Iniciar';
+            updateDisplay();
+
+            adicionarLog(`${modes[mode].nome} selecionado. Mantenha o foco.`);
+
+            ['pomodoro', 'short'].forEach(m => {
+                const btn = document.getElementById(`btn-${m}`);
+                if (btn) {
+                    if (m === mode) {
+                        btn.classList.add('active');
+                        btn.style.background = modes[m].color;
+                        btn.style.color = 'white';
+                    } else {
+                        btn.classList.remove('active');
+                        btn.style.background = 'transparent';
+                        btn.style.color = '#94a3b8';
+                    }
+                }
+            });
+        }
+
+        function toggleTimer() {
+            // TESTE OBRIGATÓRIO: Força o navegador a provar que o arquivo atualizou
+            alert("O arquivo HTML foi atualizado com sucesso! O cronômetro vai começar.");
+
+            if (isRunning) {
+                clearInterval(timer);
+                startBtn.textContent = 'Iniciar';
+                adicionarLog("Cronômetro pausado provisoriamente.");
+            } else {
+                startBtn.textContent = 'Pausar';
+                adicionarLog(`Foco total iniciado por ${Math.floor(timeLeft/60)} minutos.`);
+                
+                timer = setInterval(() => {
+                    if (timeLeft > 0) {
+                        timeLeft--;
+                        updateDisplay();
+                    } else {
+                        clearInterval(timer);
+                        avisarPython('sucesso');
+                    }
+                }, 1000);
+            }
+            isRunning = !isRunning;
+        }
+
+        function resetTimer() {
+            if (isRunning || timeLeft < modes[currentMode].time) {
+                avisarPython('interrompido');
+            }
+            clearInterval(timer);
+            isRunning = false;
+            timeLeft = modes[currentMode].time;
+
+startBtn.textContent = 'Iniciar';
+updateDisplay();
+}
+function avisarPython(evento) {
+fetch('/registrar_ciclo', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ evento: evento })
+})
+.then(res => res.json())
+.then(data => {
+if(data.historico && data.historico.length > 0){
+const ultimaMensagem = data.historico[data.historico.length - 1];
+adicionarLog(ultimaMensagem);
+}
+}).catch(err => console.error("Erro ao avisar o Python:", err));
+}
+function enviarDadosAnalisador() {
+const estudio = document.getElementById('horas-estudo').value;
+const treino = document.getElementById('horas-treino').value;
+const sono = document.getElementById('horas-sono').value;
+fetch('/calcular', {
+method: 'POST',
+headers: { 'Content-Type': 'application/json' },
+body: JSON.stringify({ estudo, treino, sono })
+})
+.then(res => res.json())
+.then(data => {
+if(data.erro) { alert(data.erro); return; }
+document.getElementById('painel-resultado').classList.remove('hidden');
+document.getElementById('txt-porcentagem').textContent = data.porcentagem;
+const caixaAlertas = document.getElementById('caixa-alertas');
+caixaAlertas.innerHTML = '';
+data.alertas.forEach(alerta => {
+const div = document.createElement('div');
+div.className = "alert-box";
+div.textContent = alerta;
+caixaAlertas.appendChild(div);
+});
+}).catch(err => console.error("Erro no analisador:", err));
+}
+updateDisplay();
+
